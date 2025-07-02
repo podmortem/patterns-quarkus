@@ -1,0 +1,282 @@
+metadata:
+  library_id: "quarkus-other-extensions"
+  version: "1.0.0"
+  maintainer: "quarkus-community"
+  compatibility: ["quarkus-2.x", "quarkus-3.x"]
+  dependencies: ["quarkus-core-patterns"]
+
+categories:
+  - caching
+  - scheduling
+  - background_tasks
+  - async_processing
+
+patterns:
+  - id: "redis_cache_error"
+    name: "Redis Cache Error"
+    
+    primary_pattern:
+      regex: "RedisException|Redis.*connection.*failed|Cache.*operation.*failed"
+      confidence: 0.87
+    
+    secondary_patterns:
+      - regex: "quarkus\\.redis"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "Jedis|Lettuce"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "@CacheResult|@CacheRemove"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["cache", "redis"]
+    
+    remediation:
+      description: "Redis cache operation failed"
+      common_causes:
+        - "Redis server not running or unreachable"
+        - "Authentication/authorization issues"
+        - "Network connectivity problems"
+        - "Cache configuration errors"
+      
+      suggested_commands:
+        - "Verify Redis server is running and accessible"
+        - "Check Redis connection configuration"
+        - "Test Redis connectivity with redis-cli"
+        - "Review cache key and serialization configuration"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/redis"
+        - "https://quarkus.io/guides/cache"
+    
+    context_extraction:
+      lines_before: 12
+      lines_after: 8
+
+  - id: "cache_configuration_error"
+    name: "Cache Configuration Error"
+    
+    primary_pattern:
+      regex: "CacheException|Cache.*configuration.*failed|@Cache.*annotation.*error"
+      confidence: 0.84
+    
+    secondary_patterns:
+      - regex: "@CacheResult|@CacheInvalidate|@CacheKey"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "quarkus\\.cache"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "caffeine|redis"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["cache", "configuration"]
+    
+    remediation:
+      description: "Cache configuration or annotation failed"
+      common_causes:
+        - "Invalid cache annotation usage"
+        - "Missing cache configuration"
+        - "Cache provider not configured"
+        - "Cache key generation issues"
+      
+      suggested_commands:
+        - "Review cache annotation usage"
+        - "Check cache configuration in application.properties"
+        - "Verify cache provider setup"
+        - "Test cache key generation logic"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/cache"
+    
+    context_extraction:
+      lines_before: 12
+      lines_after: 8
+
+  - id: "scheduler_execution_error"
+    name: "Scheduler Execution Error"
+    
+    primary_pattern:
+      regex: "SchedulerException|Scheduled.*method.*failed|Cron.*execution.*error"
+      confidence: 0.85
+    
+    secondary_patterns:
+      - regex: "@Scheduled"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "quarkus\\.scheduler"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "cron.*expression"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["scheduling", "background_tasks"]
+    
+    remediation:
+      description: "Scheduled task execution failed"
+      common_causes:
+        - "Exception in scheduled method"
+        - "Invalid cron expression"
+        - "Resource contention issues"
+        - "Long-running tasks blocking scheduler"
+      
+      suggested_commands:
+        - "Review scheduled method implementation for exceptions"
+        - "Validate cron expression syntax"
+        - "Check for resource contention or deadlocks"
+        - "Consider using @Scheduled(delay) for long-running tasks"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/scheduler"
+        - "https://quarkus.io/guides/scheduler-reference"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "async_execution_error"
+    name: "Async Execution Error"
+    
+    primary_pattern:
+      regex: "@Async.*failed|CompletableFuture.*exception|AsyncResult.*error"
+      confidence: 0.83
+    
+    secondary_patterns:
+      - regex: "@Async|@Asynchronous"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "CompletableFuture|CompletionStage"
+        weight: 0.4
+        proximity_window: 20
+      - regex: "ExecutorService|ThreadPool"
+        weight: 0.3
+        proximity_window: 30
+    
+    severity: "MEDIUM"
+    category: ["async", "threading", "concurrency"]
+    
+    remediation:
+      description: "Asynchronous execution failed"
+      common_causes:
+        - "Exception in async method"
+        - "Thread pool exhaustion"
+        - "Resource contention"
+        - "Improper exception handling"
+      
+      suggested_commands:
+        - "Review async method implementation"
+        - "Check thread pool configuration"
+        - "Add proper exception handling"
+        - "Monitor thread usage and contention"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/async"
+        - "https://quarkus.io/guides/vertx"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "vertx_event_loop_blocked"
+    name: "Vert.x Event Loop Blocked"
+    
+    primary_pattern:
+      regex: "Event.*loop.*blocked|Vertx.*blocked.*thread|BlockedThreadChecker"
+      confidence: 0.91
+    
+    secondary_patterns:
+      - regex: "io\\.vertx"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "event.*loop.*thread"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "blocking.*operation"
+        weight: 0.4
+        proximity_window: 30
+    
+    severity: "HIGH"
+    category: ["vertx", "event_loop", "performance", "blocking"]
+    
+    remediation:
+      description: "Vert.x event loop thread was blocked by synchronous operation"
+      common_causes:
+        - "Blocking I/O operations on event loop"
+        - "Long-running computations on event loop"
+        - "Synchronous database calls"
+        - "Thread.sleep() or blocking waits"
+      
+      suggested_commands:
+        - "Move blocking operations to worker threads"
+        - "Use reactive/async APIs instead of blocking ones"
+        - "Add @Blocking annotation to long-running methods"
+        - "Review event loop usage patterns"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/vertx"
+        - "https://quarkus.io/guides/reactive-routes"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "worker_thread_pool_exhaustion"
+    name: "Worker Thread Pool Exhaustion"
+    
+    primary_pattern:
+      regex: "RejectedExecutionException|Thread.*pool.*exhausted|Worker.*pool.*full"
+      confidence: 0.88
+    
+    secondary_patterns:
+      - regex: "worker.*thread"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "thread.*pool.*size"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "max.*pool.*size|core.*pool.*size"
+        weight: 0.3
+        proximity_window: 35
+    
+    severity: "HIGH"
+    category: ["threading", "worker_pool", "performance", "concurrency"]
+    
+    remediation:
+      description: "Worker thread pool is exhausted"
+      common_causes:
+        - "Too many concurrent blocking operations"
+        - "Insufficient worker thread pool size"
+        - "Long-running tasks not releasing threads"
+        - "Resource leaks in thread usage"
+      
+      suggested_commands:
+        - "Increase worker thread pool size"
+        - "Optimize long-running operations"
+        - "Add timeouts to blocking operations"
+        - "Monitor thread pool metrics"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/vertx"
+        - "https://quarkus.io/guides/config-reference"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+related_patterns:
+  - id: "redis_cache_error"
+    related_to: ["cache_configuration_error"]
+  - id: "scheduler_execution_error"
+    related_to: ["async_execution_error"]
+  - id: "vertx_event_loop_blocked"
+    related_to: ["worker_thread_pool_exhaustion", "async_execution_error"] 

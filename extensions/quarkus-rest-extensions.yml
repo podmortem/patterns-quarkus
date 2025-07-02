@@ -1,0 +1,281 @@
+metadata:
+  library_id: "quarkus-rest-extensions"
+  version: "1.0.0"
+  maintainer: "quarkus-community"
+  compatibility: ["quarkus-2.x", "quarkus-3.x"]
+  dependencies: ["quarkus-core-patterns"]
+
+categories:
+  - rest_client
+  - grpc
+  - communication
+  - api_documentation
+
+patterns:
+  - id: "rest_client_connection_error"
+    name: "REST Client Connection Error"
+    
+    primary_pattern:
+      regex: "ConnectException|WebApplicationException.*REST.*client"
+      confidence: 0.90
+    
+    secondary_patterns:
+      - regex: "@RestClient"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "Connection refused"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "quarkus\\.rest-client"
+        weight: 0.4
+        proximity_window: 35
+    
+    severity: "MEDIUM"
+    category: ["rest_client", "connectivity"]
+    
+    remediation:
+      description: "REST client failed to connect to remote service"
+      common_causes:
+        - "Remote service is down or unreachable"
+        - "Incorrect URL configuration"
+        - "Network connectivity issues"
+        - "SSL/TLS certificate problems"
+      
+      suggested_commands:
+        - "Verify remote service is running and accessible"
+        - "Check REST client URL configuration in application.properties"
+        - "Test connectivity with curl or similar tool"
+        - "Review SSL configuration if using HTTPS"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/rest-client"
+        - "https://quarkus.io/guides/rest-client-reactive"
+    
+    context_extraction:
+      lines_before: 12
+      lines_after: 8
+
+  - id: "rest_client_timeout_error"
+    name: "REST Client Timeout Error"
+    
+    primary_pattern:
+      regex: "SocketTimeoutException|ReadTimeoutException|REST.*client.*timeout"
+      confidence: 0.89
+    
+    secondary_patterns:
+      - regex: "@RestClient"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "read.*timeout|connect.*timeout"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "quarkus\\.rest-client.*timeout"
+        weight: 0.5
+        proximity_window: 35
+    
+    severity: "MEDIUM"
+    category: ["rest_client", "timeout", "performance"]
+    
+    remediation:
+      description: "REST client request timed out"
+      common_causes:
+        - "Remote service taking too long to respond"
+        - "Network latency issues"
+        - "Inadequate timeout configuration"
+        - "Resource contention on remote service"
+      
+      suggested_commands:
+        - "Increase timeout values in configuration"
+        - "Check remote service performance"
+        - "Review network connectivity quality"
+        - "Implement retry mechanisms"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/rest-client"
+        - "https://quarkus.io/guides/rest-client-reactive"
+    
+    context_extraction:
+      lines_before: 12
+      lines_after: 8
+
+  - id: "grpc_service_error"
+    name: "gRPC Service Error"
+    
+    primary_pattern:
+      regex: "StatusRuntimeException|gRPC.*service.*failed|UNAVAILABLE.*grpc"
+      confidence: 0.89
+    
+    secondary_patterns:
+      - regex: "quarkus\\.grpc"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "@GrpcService"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "io\\.grpc"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "HIGH"
+    category: ["grpc", "services"]
+    
+    remediation:
+      description: "gRPC service call failed"
+      common_causes:
+        - "gRPC server not running or unreachable"
+        - "Service definition mismatch"
+        - "Network connectivity issues"
+        - "Authentication/authorization problems"
+      
+      suggested_commands:
+        - "Verify gRPC server is running and accessible"
+        - "Check service definition compatibility"
+        - "Test gRPC connectivity with grpcurl"
+        - "Review TLS configuration if using secure channels"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/grpc-getting-started"
+        - "https://quarkus.io/guides/grpc-service-implementation"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "openapi_swagger_error"
+    name: "OpenAPI/Swagger Configuration Error"
+    
+    primary_pattern:
+      regex: "OpenAPI.*failed|Swagger.*initialization.*failed"
+      confidence: 0.82
+    
+    secondary_patterns:
+      - regex: "quarkus\\.smallrye-openapi"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "@OpenAPIDefinition"
+        weight: 0.3
+        proximity_window: 25
+      - regex: "swagger-ui"
+        weight: 0.4
+        proximity_window: 20
+    
+    severity: "LOW"
+    category: ["documentation", "api"]
+    
+    remediation:
+      description: "OpenAPI/Swagger documentation generation failed"
+      common_causes:
+        - "Invalid OpenAPI annotations"
+        - "Configuration conflicts"
+        - "Missing required metadata"
+        - "Path or operation conflicts"
+      
+      suggested_commands:
+        - "Review @OpenAPIDefinition and related annotations"
+        - "Check OpenAPI configuration in application.properties"
+        - "Validate API path definitions"
+        - "Check for duplicate operation IDs"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/openapi-swaggerui"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+
+  - id: "rest_endpoint_mapping_error"
+    name: "REST Endpoint Mapping Error"
+    
+    primary_pattern:
+      regex: "@Path.*mapping.*failed|REST.*endpoint.*conflict|JAX-RS.*mapping.*error"
+      confidence: 0.87
+    
+    secondary_patterns:
+      - regex: "@Path|@GET|@POST|@PUT|@DELETE"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "JAX-RS|jakarta\\.ws\\.rs|javax\\.ws\\.rs"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "endpoint.*duplicate|path.*conflict"
+        weight: 0.6
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["rest", "endpoint", "mapping"]
+    
+    remediation:
+      description: "REST endpoint mapping failed"
+      common_causes:
+        - "Duplicate endpoint paths"
+        - "Conflicting HTTP methods"
+        - "Invalid @Path annotations"
+        - "JAX-RS configuration issues"
+      
+      suggested_commands:
+        - "Check for duplicate @Path values"
+        - "Review HTTP method annotations"
+        - "Validate path parameter syntax"
+        - "Check JAX-RS provider configuration"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/rest-json"
+        - "https://quarkus.io/guides/resteasy-reactive"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "json_serialization_error"
+    name: "JSON Serialization Error"
+    
+    primary_pattern:
+      regex: "JsonbException|JsonProcessingException|JSON.*serialization.*failed"
+      confidence: 0.90
+    
+    secondary_patterns:
+      - regex: "@JsonbProperty|@JsonProperty"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "Jackson|JSON-B"
+        weight: 0.5
+        proximity_window: 20
+      - regex: "quarkus\\..*json"
+        weight: 0.3
+        proximity_window: 30
+    
+    severity: "MEDIUM"
+    category: ["json", "serialization", "rest"]
+    
+    remediation:
+      description: "JSON serialization/deserialization failed"
+      common_causes:
+        - "Invalid JSON structure"
+        - "Missing JSON annotations"
+        - "Type compatibility issues"
+        - "Custom serializer configuration problems"
+      
+      suggested_commands:
+        - "Verify JSON structure and format"
+        - "Check JSON-B or Jackson annotations"
+        - "Review type mapping compatibility"
+        - "Test with simple JSON examples"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/rest-json"
+        - "https://quarkus.io/guides/rest-client"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+related_patterns:
+  - id: "rest_client_connection_error"
+    related_to: ["rest_client_timeout_error", "json_serialization_error"]
+  - id: "grpc_service_error"
+    related_to: ["rest_client_connection_error"]
+  - id: "rest_endpoint_mapping_error"
+    related_to: ["json_serialization_error"] 

@@ -1,0 +1,195 @@
+metadata:
+  library_id: "quarkus-data-extensions"
+  version: "1.0.0"
+  maintainer: "quarkus-community"
+  compatibility: ["quarkus-2.x", "quarkus-3.x"]
+  dependencies: ["quarkus-core-patterns"]
+
+categories:
+  - data_access
+  - database
+  - persistence
+  - orm
+
+patterns:
+  - id: "database_connection_failure"
+    name: "Database Connection Failure"
+    
+    primary_pattern:
+      regex: "SQLException|Could not connect to database|Connection.*refused.*database"
+      confidence: 0.93
+    
+    secondary_patterns:
+      - regex: "quarkus\\.datasource"
+        weight: 0.5
+        proximity_window: 40
+      - regex: "HikariCP|Agroal"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "JDBC.*driver"
+        weight: 0.3
+        proximity_window: 25
+    
+    severity: "CRITICAL"
+    category: ["database", "connectivity"]
+    
+    remediation:
+      description: "Application failed to connect to database"
+      common_causes:
+        - "Database service is not running"
+        - "Incorrect connection parameters"
+        - "Network connectivity issues"
+        - "Authentication/authorization problems"
+      
+      suggested_commands:
+        - "Verify database service is running"
+        - "Check datasource configuration in application.properties"
+        - "Test database connectivity independently"
+        - "Verify database credentials and permissions"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/datasource"
+        - "https://quarkus.io/guides/hibernate-orm"
+    
+    context_extraction:
+      lines_before: 20
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "hibernate_orm_configuration_error"
+    name: "Hibernate ORM Configuration Error"
+    
+    primary_pattern:
+      regex: "HibernateException|JPA.*configuration.*failed|EntityManager.*creation.*failed"
+      confidence: 0.89
+    
+    secondary_patterns:
+      - regex: "quarkus\\.hibernate-orm"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "@Entity|@Repository"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "persistence\\.xml"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "HIGH"
+    category: ["hibernate", "orm", "configuration"]
+    
+    remediation:
+      description: "Hibernate ORM configuration failed"
+      common_causes:
+        - "Missing JPA configuration"
+        - "Incorrect entity mapping"
+        - "Database schema mismatch"
+        - "Transaction configuration issues"
+      
+      suggested_commands:
+        - "Check Hibernate ORM configuration in application.properties"
+        - "Verify entity annotations and mappings"
+        - "Review database schema compatibility"
+        - "Check transaction manager configuration"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/hibernate-orm"
+        - "https://quarkus.io/guides/hibernate-orm-panache"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "panache_query_error"
+    name: "Panache Query Error"
+    
+    primary_pattern:
+      regex: "PanacheQuery.*failed|Panache.*entity.*error|find.*query.*failed"
+      confidence: 0.86
+    
+    secondary_patterns:
+      - regex: "PanacheEntity|PanacheRepository"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "findBy|listBy|count"
+        weight: 0.4
+        proximity_window: 20
+      - regex: "Sort\\.by|Parameters"
+        weight: 0.3
+        proximity_window: 15
+    
+    severity: "MEDIUM"
+    category: ["panache", "query", "orm"]
+    
+    remediation:
+      description: "Panache query execution failed"
+      common_causes:
+        - "Invalid query parameters"
+        - "Incorrect entity field names"
+        - "Database schema mismatch"
+        - "Query syntax errors"
+      
+      suggested_commands:
+        - "Verify query parameter names and types"
+        - "Check entity field mappings"
+        - "Review database schema compatibility"
+        - "Test queries with simpler syntax first"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/hibernate-orm-panache"
+        - "https://quarkus.io/guides/hibernate-reactive-panache"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "transaction_management_error"
+    name: "Transaction Management Error"
+    
+    primary_pattern:
+      regex: "TransactionException|Transaction.*rollback|@Transactional.*failed"
+      confidence: 0.87
+    
+    secondary_patterns:
+      - regex: "@Transactional"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "TransactionManager"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "commit|rollback"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["transaction", "database", "consistency"]
+    
+    remediation:
+      description: "Database transaction management failed"
+      common_causes:
+        - "Nested transaction conflicts"
+        - "Long-running transactions timing out"
+        - "Deadlock conditions"
+        - "Incorrect transaction boundaries"
+      
+      suggested_commands:
+        - "Review @Transactional annotation usage"
+        - "Check for nested transaction conflicts"
+        - "Optimize long-running operations"
+        - "Review transaction isolation levels"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/transaction"
+        - "https://quarkus.io/guides/hibernate-orm"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+related_patterns:
+  - id: "database_connection_failure"
+    related_to: ["hibernate_orm_configuration_error", "transaction_management_error"]
+  - id: "panache_query_error"
+    related_to: ["hibernate_orm_configuration_error"] 

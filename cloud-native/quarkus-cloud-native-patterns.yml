@@ -1,0 +1,284 @@
+metadata:
+  library_id: "quarkus-cloud-native-patterns"
+  version: "1.0.0"
+  maintainer: "quarkus-community"
+  compatibility: ["quarkus-2.x", "quarkus-3.x"]
+  dependencies: ["quarkus-core-patterns"]
+
+categories:
+  - cloud_native
+  - observability
+  - monitoring
+  - health_checks
+  - kubernetes
+  - tracing
+
+patterns:
+  - id: "health_check_failure"
+    name: "Health Check Failure"
+    
+    primary_pattern:
+      regex: "Health check.*failed|Readiness.*check.*failed|Liveness.*check.*failed"
+      confidence: 0.91
+    
+    secondary_patterns:
+      - regex: "quarkus\\.health"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "@Health|@Readiness|@Liveness"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "HealthCheck.*DOWN"
+        weight: 0.6
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["health", "monitoring"]
+    
+    remediation:
+      description: "Application health check failed"
+      common_causes:
+        - "Dependent service unavailable"
+        - "Database connection issues"
+        - "Resource exhaustion"
+        - "Custom health check logic errors"
+      
+      suggested_commands:
+        - "Check dependent services status"
+        - "Review custom health check implementations"
+        - "Verify database and external service connectivity"
+        - "Check application resource usage"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/health-guide"
+        - "https://quarkus.io/guides/microprofile-health"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 8
+
+  - id: "metrics_collection_error"
+    name: "Metrics Collection Error"
+    
+    primary_pattern:
+      regex: "MetricsException|Prometheus.*export.*failed|Metrics.*collection.*error"
+      confidence: 0.83
+    
+    secondary_patterns:
+      - regex: "quarkus\\.metrics"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "micrometer|prometheus"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "@Counted|@Timed|@Gauge"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "LOW"
+    category: ["metrics", "monitoring"]
+    
+    remediation:
+      description: "Failed to collect or export metrics"
+      common_causes:
+        - "Invalid metric annotations"
+        - "Prometheus endpoint configuration issues"
+        - "Metric registry conflicts"
+        - "Missing required dependencies"
+      
+      suggested_commands:
+        - "Review metric annotation usage"
+        - "Check Prometheus endpoint configuration"
+        - "Verify metrics extensions are properly configured"
+        - "Check for metric name conflicts"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/metrics"
+        - "https://quarkus.io/guides/micrometer"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+
+  - id: "kubernetes_deployment_error"
+    name: "Kubernetes Deployment Error"
+    
+    primary_pattern:
+      regex: "KubernetesClientException|Deployment.*failed|Pod.*startup.*failed"
+      confidence: 0.86
+    
+    secondary_patterns:
+      - regex: "quarkus\\.kubernetes"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "application\\.yaml|deployment\\.yaml"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "ResourceQuota|LimitRange"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "HIGH"
+    category: ["kubernetes", "deployment"]
+    
+    remediation:
+      description: "Kubernetes deployment failed"
+      common_causes:
+        - "Insufficient cluster resources"
+        - "Invalid deployment configuration"
+        - "Image pull failures"
+        - "RBAC permission issues"
+      
+      suggested_commands:
+        - "Check cluster resource availability"
+        - "Verify deployment YAML configuration"
+        - "Check image availability and pull permissions"
+        - "Review RBAC permissions for service account"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/kubernetes"
+        - "https://quarkus.io/guides/kubernetes-config"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+
+  - id: "opentelemetry_tracing_error"
+    name: "OpenTelemetry Tracing Error"
+    
+    primary_pattern:
+      regex: "OpenTelemetry.*failed|Tracing.*export.*error|Span.*creation.*failed"
+      confidence: 0.81
+    
+    secondary_patterns:
+      - regex: "quarkus\\.opentelemetry"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "jaeger|otlp"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "@WithSpan|@SpanAttribute"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "LOW"
+    category: ["tracing", "observability"]
+    
+    remediation:
+      description: "OpenTelemetry tracing failed"
+      common_causes:
+        - "Tracing backend not available"
+        - "Invalid exporter configuration"
+        - "Network connectivity issues"
+        - "Sampling configuration problems"
+      
+      suggested_commands:
+        - "Verify tracing backend (Jaeger/Zipkin) is running"
+        - "Check OpenTelemetry exporter configuration"
+        - "Review sampling configuration"
+        - "Test connectivity to tracing backend"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/opentelemetry"
+        - "https://quarkus.io/guides/opentelemetry-tracing"
+    
+    context_extraction:
+      lines_before: 12
+      lines_after: 8
+
+  - id: "container_resource_limit_exceeded"
+    name: "Container Resource Limit Exceeded"
+    
+    primary_pattern:
+      regex: "OutOfMemoryError|OOMKilled|Resource.*limit.*exceeded"
+      confidence: 0.89
+    
+    secondary_patterns:
+      - regex: "memory.*limit"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "cpu.*throttling"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "container.*terminated"
+        weight: 0.6
+        proximity_window: 20
+    
+    severity: "CRITICAL"
+    category: ["kubernetes", "resources", "memory"]
+    
+    remediation:
+      description: "Container exceeded resource limits and was terminated"
+      common_causes:
+        - "Insufficient memory allocation"
+        - "Memory leaks in application"
+        - "CPU throttling due to limits"
+        - "Incorrect resource requests/limits"
+      
+      suggested_commands:
+        - "Increase memory limits in deployment configuration"
+        - "Analyze heap dumps for memory leaks"
+        - "Review JVM memory settings"
+        - "Optimize application memory usage"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/kubernetes-resources"
+        - "https://quarkus.io/guides/container-image"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "service_mesh_communication_error"
+    name: "Service Mesh Communication Error"
+    
+    primary_pattern:
+      regex: "istio.*failed|envoy.*error|Service.*mesh.*communication.*failed"
+      confidence: 0.84
+    
+    secondary_patterns:
+      - regex: "sidecar.*proxy"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "upstream.*connection.*error"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "circuit.*breaker"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["service_mesh", "networking", "communication"]
+    
+    remediation:
+      description: "Service mesh communication failure detected"
+      common_causes:
+        - "Service mesh proxy configuration issues"
+        - "Network policies blocking traffic"
+        - "Circuit breaker activation"
+        - "mTLS configuration problems"
+      
+      suggested_commands:
+        - "Check service mesh proxy logs"
+        - "Verify network policies and security rules"
+        - "Review circuit breaker configuration"
+        - "Validate mTLS certificates and configuration"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/stork"
+        - "https://quarkus.io/guides/smallrye-fault-tolerance"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+
+related_patterns:
+  - id: "health_check_failure"
+    related_to: ["kubernetes_deployment_error", "container_resource_limit_exceeded"]
+  - id: "metrics_collection_error"
+    related_to: ["opentelemetry_tracing_error"]
+  - id: "kubernetes_deployment_error"
+    related_to: ["container_resource_limit_exceeded"]
+  - id: "service_mesh_communication_error"
+    related_to: ["kubernetes_deployment_error"] 

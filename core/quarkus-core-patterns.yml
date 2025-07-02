@@ -1,0 +1,371 @@
+metadata:
+  library_id: "quarkus-core-patterns"
+  version: "1.0.0"
+  maintainer: "quarkus-community"
+  compatibility: ["quarkus-2.x", "quarkus-3.x"]
+  dependencies: []
+
+categories:
+  - application_framework
+  - dependency_injection
+  - configuration
+  - development
+  - native_compilation
+  - build
+
+patterns:
+  - id: "quarkus_application_startup_failure"
+    name: "Quarkus Application Startup Failure"
+    
+    primary_pattern:
+      regex: "Failed to start application|Application startup failed"
+      confidence: 0.95
+    
+    secondary_patterns:
+      - regex: "RuntimeException.*startup"
+        weight: 0.4
+        proximity_window: 20
+      - regex: "Quarkus application exiting"
+        weight: 0.3
+        proximity_window: 10
+    
+    severity: "CRITICAL"
+    category: ["startup", "runtime"]
+    
+    remediation:
+      description: "Quarkus application failed to start"
+      common_causes:
+        - "Configuration errors"
+        - "Missing dependencies"
+        - "Port binding conflicts"
+        - "Database connection issues"
+      
+      suggested_commands:
+        - "Check application.properties for required configurations"
+        - "Verify all required extensions are included"
+        - "Check if ports are already in use"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/config-reference"
+        - "https://quarkus.io/guides/getting-started"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+      highlight_keywords: ["ERROR", "FATAL", "Failed", "Exception"]
+
+  - id: "arc_cdi_injection_failure"
+    name: "Arc CDI Injection Failure"
+    
+    primary_pattern:
+      regex: "UnsatisfiedResolutionException|AmbiguousResolutionException"
+      confidence: 0.92
+    
+    secondary_patterns:
+      - regex: "No bean matches the required type"
+        weight: 0.5
+        proximity_window: 15
+      - regex: "Multiple beans match the required type"
+        weight: 0.5
+        proximity_window: 15
+      - regex: "@Inject.*failed"
+        weight: 0.3
+        proximity_window: 25
+    
+    severity: "HIGH"
+    category: ["dependency_injection", "runtime"]
+    
+    remediation:
+      description: "Arc CDI dependency injection failed"
+      common_causes:
+        - "Missing @ApplicationScoped or other scope annotations"
+        - "Ambiguous bean resolution"
+        - "Interface without implementation"
+        - "Circular dependencies"
+      
+      suggested_commands:
+        - "Add proper scope annotations (@ApplicationScoped, @RequestScoped, etc.)"
+        - "Use @Named qualifier to resolve ambiguity"
+        - "Check for missing @Produces methods"
+        - "Review bean discovery configuration"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/cdi"
+        - "https://quarkus.io/guides/cdi-reference"
+    
+    context_extraction:
+      lines_before: 20
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "configuration_property_error"
+    name: "Configuration Property Error"
+    
+    primary_pattern:
+      regex: "ConfigurationException|Property.*not found|Missing required configuration"
+      confidence: 0.88
+    
+    secondary_patterns:
+      - regex: "application\\.properties"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "@ConfigProperty.*required"
+        weight: 0.5
+        proximity_window: 20
+      - regex: "quarkus\\.[\\w\\.]+.*not.*configured"
+        weight: 0.6
+        proximity_window: 25
+    
+    severity: "MEDIUM"
+    category: ["configuration", "startup"]
+    
+    remediation:
+      description: "Required configuration property is missing or invalid"
+      common_causes:
+        - "Missing required properties in application.properties"
+        - "Incorrect property names or values"
+        - "Environment-specific configuration not set"
+        - "Profile-specific properties missing"
+      
+      suggested_commands:
+        - "Check application.properties for missing properties"
+        - "Verify environment variables are set correctly"
+        - "Review profile-specific configuration files"
+        - "Use @ConfigProperty(defaultValue) for optional properties"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/config-reference"
+        - "https://quarkus.io/guides/config"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+
+  - id: "dev_mode_hot_reload_error"
+    name: "Dev Mode Hot Reload Error" 
+    
+    primary_pattern:
+      regex: "Hot replacement.*failed|Compilation.*failed.*dev mode"
+      confidence: 0.85
+    
+    secondary_patterns:
+      - regex: "quarkus:dev"
+        weight: 0.3
+        proximity_window: 40
+      - regex: "ClassNotFoundException.*dev"
+        weight: 0.4
+        proximity_window: 20
+      - regex: "Restart.*required"
+        weight: 0.3
+        proximity_window: 15
+    
+    severity: "LOW"
+    category: ["development", "hot_reload"]
+    
+    remediation:
+      description: "Hot reload failed in development mode"
+      common_causes:
+        - "Compilation errors in changed files"
+        - "Structural changes requiring restart"
+        - "Classpath issues"
+        - "IDE synchronization problems"
+      
+      suggested_commands:
+        - "Fix compilation errors in the changed files"
+        - "Restart dev mode with ./mvnw quarkus:dev"
+        - "Check IDE project synchronization"
+        - "Clear target/ directory and rebuild"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/getting-started#development-mode"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 8
+
+  - id: "extension_compatibility_error"
+    name: "Extension Compatibility Error"
+    
+    primary_pattern:
+      regex: "IncompatibleClassChangeError|NoSuchMethodError.*quarkus"
+      confidence: 0.87
+    
+    secondary_patterns:
+      - regex: "extension.*incompatible"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "BOM.*version.*mismatch"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "quarkus-.*-deployment"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "HIGH"
+    category: ["extensions", "compatibility"]
+    
+    remediation:
+      description: "Extension compatibility issue detected"
+      common_causes:
+        - "Mixing different Quarkus versions"
+        - "Incompatible extension versions"
+        - "Missing or incorrect BOM import"
+        - "Transitive dependency conflicts"
+      
+      suggested_commands:
+        - "Ensure all Quarkus extensions use the same version"
+        - "Import Quarkus BOM in pom.xml"
+        - "Check for dependency version conflicts"
+        - "Update to compatible extension versions"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/extension-registry"
+        - "https://quarkus.io/guides/maven-tooling"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "native_compilation_failure"
+    name: "Native Image Compilation Failure"
+    
+    primary_pattern:
+      regex: "Failed to execute goal.*:native-image|native-image building on Server failed"
+      confidence: 0.98
+    
+    secondary_patterns:
+      - regex: "SubstrateVM|GraalVM"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "native-image.*exit code"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "Caused by.*reflection"
+        weight: 0.4
+        proximity_window: 50
+    
+    severity: "HIGH"
+    category: ["native_compilation", "build"]
+    
+    remediation:
+      description: "Native image compilation failed"
+      common_causes:
+        - "Missing reflection configuration"
+        - "Unsupported libraries for native compilation"
+        - "Insufficient memory for compilation"
+        - "Dynamic class loading issues"
+      
+      suggested_commands:
+        - "Add @RegisterForReflection annotations"
+        - "Check extension compatibility with native mode"
+        - "Increase Docker memory limits"
+        - "Review reflection-config.json"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/building-native-image"
+        - "https://quarkus.io/guides/writing-native-applications-tips"
+    
+    context_extraction:
+      lines_before: 25
+      lines_after: 15
+      include_stack_trace: true
+
+  - id: "jakarta_ee_migration_error"
+    name: "Jakarta EE Migration Error"
+    
+    primary_pattern:
+      regex: "jakarta\\..*not.*found|NoClassDefFoundError.*jakarta|javax.*jakarta.*conflict"
+      confidence: 0.94
+    
+    secondary_patterns:
+      - regex: "javax\\.ws\\.rs"
+        weight: 0.6
+        proximity_window: 25
+      - regex: "javax\\.persistence"
+        weight: 0.6
+        proximity_window: 25
+      - regex: "jakarta\\.ws\\.rs|jakarta\\.persistence"
+        weight: 0.5
+        proximity_window: 25
+    
+    severity: "MEDIUM"
+    category: ["jakarta_ee", "migration"]
+    
+    remediation:
+      description: "Jakarta EE migration issues between Quarkus versions"
+      common_causes:
+        - "Mixed javax and jakarta imports"
+        - "Third-party libraries still using javax"
+        - "Incomplete migration from javax to jakarta"
+        - "Classpath conflicts between javax and jakarta"
+      
+      suggested_commands:
+        - "Update all javax imports to jakarta equivalents (Quarkus 3.x)"
+        - "Check third-party library Jakarta EE compatibility"
+        - "Use appropriate Java EE vs Jakarta EE versions"
+        - "Review dependency management for javax/jakarta conflicts"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/migration-guide-3.0"
+        - "https://jakarta.ee/specifications/"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "build_time_augmentation_failure"
+    name: "Build-time Augmentation Failure"
+    
+    primary_pattern:
+      regex: "AugmentationException|Build.*step.*failed|BuildException.*augmentation"
+      confidence: 0.91
+    
+    secondary_patterns:
+      - regex: "BuildTimeConfigurationReader"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "deployment.*processor"
+        weight: 0.3
+        proximity_window: 30
+      - regex: "quarkus.*maven.*plugin"
+        weight: 0.4
+        proximity_window: 35
+    
+    severity: "HIGH"
+    category: ["build", "augmentation"]
+    
+    remediation:
+      description: "Quarkus build-time augmentation process failed"
+      common_causes:
+        - "Extension compatibility issues"
+        - "Configuration migration needed"
+        - "Build-time vs runtime configuration changes"
+        - "Deployment descriptor issues"
+      
+      suggested_commands:
+        - "Update extensions to compatible versions"
+        - "Review configuration migration requirements"
+        - "Check build-time configuration requirements"
+        - "Verify deployment processor compatibility"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/writing-extensions"
+        - "https://quarkus.io/guides/config-reference"
+    
+    context_extraction:
+      lines_before: 20
+      lines_after: 15
+      include_stack_trace: true
+
+related_patterns:
+  - id: "arc_cdi_injection_failure"
+    related_to: ["configuration_property_error"]
+  - id: "extension_compatibility_error"
+    related_to: ["quarkus_application_startup_failure", "native_compilation_failure"]
+  - id: "jakarta_ee_migration_error"
+    related_to: ["build_time_augmentation_failure"]
+  - id: "native_compilation_failure"
+    related_to: ["build_time_augmentation_failure"] 

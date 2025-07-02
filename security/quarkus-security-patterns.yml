@@ -1,0 +1,238 @@
+metadata:
+  library_id: "quarkus-security-patterns"
+  version: "1.0.0"
+  maintainer: "quarkus-community"
+  compatibility: ["quarkus-2.x", "quarkus-3.x"]
+  dependencies: ["quarkus-core-patterns"]
+
+categories:
+  - security
+  - authentication
+  - authorization
+  - jwt
+  - oauth
+
+patterns:
+  - id: "security_authentication_failure"
+    name: "Security Authentication Failure"
+    
+    primary_pattern:
+      regex: "AuthenticationException|UnauthorizedException|Security.*authentication.*failed"
+      confidence: 0.89
+    
+    secondary_patterns:
+      - regex: "quarkus\\.security"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "@RolesAllowed|@Authenticated"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "JWT.*validation.*failed"
+        weight: 0.6
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["security", "authentication"]
+    
+    remediation:
+      description: "Authentication or authorization failed"
+      common_causes:
+        - "Invalid credentials or tokens"
+        - "Misconfigured security provider"
+        - "Expired JWT tokens"
+        - "Missing security configuration"
+      
+      suggested_commands:
+        - "Verify authentication credentials"
+        - "Check security configuration in application.properties"
+        - "Validate JWT token configuration and expiration"
+        - "Review @RolesAllowed and @Authenticated annotations"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/security"
+        - "https://quarkus.io/guides/security-jwt"
+    
+    context_extraction:
+      lines_before: 12
+      lines_after: 8
+
+  - id: "jwt_token_validation_failure"
+    name: "JWT Token Validation Failure"
+    
+    primary_pattern:
+      regex: "JWT.*invalid|JWTException|Token.*expired|JsonWebTokenException"
+      confidence: 0.92
+    
+    secondary_patterns:
+      - regex: "quarkus\\.smallrye-jwt"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "@JsonWebToken"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "Bearer.*token"
+        weight: 0.3
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["security", "jwt", "authentication"]
+    
+    remediation:
+      description: "JWT token validation failed"
+      common_causes:
+        - "Token has expired"
+        - "Invalid token signature"
+        - "Incorrect JWT configuration"
+        - "Missing or invalid issuer/audience"
+      
+      suggested_commands:
+        - "Check JWT token expiration time"
+        - "Verify JWT signing key configuration"
+        - "Validate JWT issuer and audience settings"
+        - "Review token format and claims"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/security-jwt"
+        - "https://quarkus.io/guides/security-openid-connect-client"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "oauth2_authorization_failure"
+    name: "OAuth2 Authorization Failure"
+    
+    primary_pattern:
+      regex: "OAuthException|OAuth2.*failed|Authorization.*code.*invalid"
+      confidence: 0.87
+    
+    secondary_patterns:
+      - regex: "quarkus\\.oidc"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "authorization_code|client_credentials"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "access_token.*invalid"
+        weight: 0.6
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["security", "oauth2", "authorization"]
+    
+    remediation:
+      description: "OAuth2 authorization process failed"
+      common_causes:
+        - "Invalid client credentials"
+        - "Incorrect OAuth2 configuration"
+        - "Authorization server unreachable"
+        - "Invalid redirect URI"
+      
+      suggested_commands:
+        - "Verify OAuth2 client ID and secret"
+        - "Check authorization server configuration"
+        - "Validate redirect URI settings"
+        - "Review OAuth2 scope configurations"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/security-openid-connect"
+        - "https://quarkus.io/guides/security-openid-connect-web-authentication"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+
+  - id: "rbac_permission_denied"
+    name: "RBAC Permission Denied"
+    
+    primary_pattern:
+      regex: "ForbiddenException|Access.*denied|Permission.*denied"
+      confidence: 0.85
+    
+    secondary_patterns:
+      - regex: "@RolesAllowed"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "SecurityIdentity"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "roles.*required"
+        weight: 0.6
+        proximity_window: 20
+    
+    severity: "LOW"
+    category: ["security", "authorization", "rbac"]
+    
+    remediation:
+      description: "User lacks required permissions for the requested operation"
+      common_causes:
+        - "User missing required roles"
+        - "Incorrect @RolesAllowed annotation"
+        - "Role mapping configuration issues"
+        - "Security identity not properly set"
+      
+      suggested_commands:
+        - "Check user's assigned roles"
+        - "Verify @RolesAllowed annotation values"
+        - "Review role mapping configuration"
+        - "Validate security identity setup"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/security-authorization"
+        - "https://quarkus.io/guides/security-built-in-authentication"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 8
+
+  - id: "security_context_missing"
+    name: "Security Context Missing"
+    
+    primary_pattern:
+      regex: "SecurityContext.*null|SecurityIdentity.*not.*found|Authentication.*required"
+      confidence: 0.88
+    
+    secondary_patterns:
+      - regex: "@Authenticated"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "quarkus\\.security\\.runtime"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "Principal.*not.*available"
+        weight: 0.5
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["security", "authentication", "context"]
+    
+    remediation:
+      description: "Security context is not available or properly initialized"
+      common_causes:
+        - "Missing authentication mechanism"
+        - "Unauthenticated request to protected resource"
+        - "Security context not propagated"
+        - "Incorrect security configuration"
+      
+      suggested_commands:
+        - "Add authentication mechanism (Basic, JWT, etc.)"
+        - "Check @Authenticated annotation usage"
+        - "Verify security configuration in application.properties"
+        - "Review security context propagation"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/security-authentication-mechanisms"
+        - "https://quarkus.io/guides/security-identity-providers"
+    
+    context_extraction:
+      lines_before: 12
+      lines_after: 8
+
+related_patterns:
+  - id: "jwt_token_validation_failure"
+    related_to: ["security_authentication_failure", "oauth2_authorization_failure"]
+  - id: "rbac_permission_denied"
+    related_to: ["security_authentication_failure", "security_context_missing"]
+  - id: "security_context_missing"
+    related_to: ["security_authentication_failure"] 
