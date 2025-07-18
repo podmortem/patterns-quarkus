@@ -1,6 +1,6 @@
 metadata:
   library_id: "quarkus-cloud-native-patterns"
-  version: "1.0.0"
+  version: "1.1.0"
   maintainer: "quarkus-community"
   compatibility: ["quarkus-2.x", "quarkus-3.x"]
   dependencies: ["quarkus-core-patterns"]
@@ -18,7 +18,7 @@ patterns:
     name: "Health Check Failure"
     
     primary_pattern:
-      regex: "Health check.*failed|Readiness.*check.*failed|Liveness.*check.*failed"
+      regex: "Health check.*failed|Readiness.*failed|Liveness.*failed|health.*error|check.*DOWN"
       confidence: 0.91
     
     secondary_patterns:
@@ -61,7 +61,7 @@ patterns:
     name: "Metrics Collection Error"
     
     primary_pattern:
-      regex: "MetricsException|Prometheus.*export.*failed|Metrics.*collection.*error"
+      regex: "MetricsException|Prometheus.*failed|Metrics.*error|metrics.*collection.*error|metric.*failed"
       confidence: 0.83
     
     secondary_patterns:
@@ -104,7 +104,7 @@ patterns:
     name: "Kubernetes Deployment Error"
     
     primary_pattern:
-      regex: "KubernetesClientException|Deployment.*failed|Pod.*startup.*failed"
+      regex: "KubernetesClientException|Deployment.*failed|Pod.*failed|kubernetes.*error|k8s.*error"
       confidence: 0.86
     
     secondary_patterns:
@@ -147,7 +147,7 @@ patterns:
     name: "OpenTelemetry Tracing Error"
     
     primary_pattern:
-      regex: "OpenTelemetry.*failed|Tracing.*export.*error|Span.*creation.*failed"
+      regex: "OpenTelemetry.*failed|Tracing.*error|Span.*failed|telemetry.*error|trace.*failed"
       confidence: 0.81
     
     secondary_patterns:
@@ -190,7 +190,7 @@ patterns:
     name: "Container Resource Limit Exceeded"
     
     primary_pattern:
-      regex: "OutOfMemoryError|OOMKilled|Resource.*limit.*exceeded"
+      regex: "OutOfMemoryError|OOMKilled|Resource.*limit.*exceeded|memory.*exceeded|oom.*killed"
       confidence: 0.89
     
     secondary_patterns:
@@ -234,7 +234,7 @@ patterns:
     name: "Service Mesh Communication Error"
     
     primary_pattern:
-      regex: "istio.*failed|envoy.*error|Service.*mesh.*communication.*failed"
+      regex: "istio.*failed|envoy.*error|Service.*mesh.*failed|mesh.*communication.*error|sidecar.*error"
       confidence: 0.84
     
     secondary_patterns:

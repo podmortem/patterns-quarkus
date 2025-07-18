@@ -1,6 +1,6 @@
 metadata:
   library_id: "quarkus-data-extensions"
-  version: "1.0.0"
+  version: "1.1.0"
   maintainer: "quarkus-community"
   compatibility: ["quarkus-2.x", "quarkus-3.x"]
   dependencies: ["quarkus-core-patterns"]
@@ -16,7 +16,7 @@ patterns:
     name: "Database Connection Failure"
     
     primary_pattern:
-      regex: "SQLException|Could not connect to database|Connection.*refused.*database"
+      regex: "SQLException|Database.*connection.*failed|Connection.*refused|Connection.*failed|Could not connect|Unable to.*connect"
       confidence: 0.93
     
     secondary_patterns:
@@ -26,7 +26,7 @@ patterns:
       - regex: "HikariCP|Agroal"
         weight: 0.4
         proximity_window: 30
-      - regex: "JDBC.*driver"
+      - regex: "JDBC.*driver|driver.*not.*found"
         weight: 0.3
         proximity_window: 25
     
@@ -60,7 +60,7 @@ patterns:
     name: "Hibernate ORM Configuration Error"
     
     primary_pattern:
-      regex: "HibernateException|JPA.*configuration.*failed|EntityManager.*creation.*failed"
+      regex: "HibernateException|JPA.*configuration.*failed|JPA.*error|EntityManager.*failed|Hibernate.*error|ORM.*error"
       confidence: 0.89
     
     secondary_patterns:
@@ -104,7 +104,7 @@ patterns:
     name: "Panache Query Error"
     
     primary_pattern:
-      regex: "PanacheQuery.*failed|Panache.*entity.*error|find.*query.*failed"
+      regex: "PanacheQuery.*failed|Panache.*error|find.*query.*failed|query.*failed|Panache.*exception"
       confidence: 0.86
     
     secondary_patterns:
@@ -148,7 +148,7 @@ patterns:
     name: "Transaction Management Error"
     
     primary_pattern:
-      regex: "TransactionException|Transaction.*rollback|@Transactional.*failed"
+      regex: "TransactionException|Transaction.*rollback|Transaction.*failed|@Transactional.*failed|transaction.*error"
       confidence: 0.87
     
     secondary_patterns:

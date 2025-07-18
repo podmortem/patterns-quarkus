@@ -1,6 +1,6 @@
 metadata:
   library_id: "quarkus-rest-extensions"
-  version: "1.0.0"
+  version: "1.1.0"
   maintainer: "quarkus-community"
   compatibility: ["quarkus-2.x", "quarkus-3.x"]
   dependencies: ["quarkus-core-patterns"]
@@ -16,7 +16,7 @@ patterns:
     name: "REST Client Connection Error"
     
     primary_pattern:
-      regex: "ConnectException|WebApplicationException.*REST.*client"
+      regex: "ConnectException|WebApplicationException|REST.*client.*failed|REST.*error|client.*connection.*failed"
       confidence: 0.90
     
     secondary_patterns:
@@ -59,7 +59,7 @@ patterns:
     name: "REST Client Timeout Error"
     
     primary_pattern:
-      regex: "SocketTimeoutException|ReadTimeoutException|REST.*client.*timeout"
+      regex: "SocketTimeoutException|ReadTimeoutException|TimeoutException|REST.*timeout|client.*timeout|timeout.*error"
       confidence: 0.89
     
     secondary_patterns:
@@ -102,7 +102,7 @@ patterns:
     name: "gRPC Service Error"
     
     primary_pattern:
-      regex: "StatusRuntimeException|gRPC.*service.*failed|UNAVAILABLE.*grpc"
+      regex: "StatusRuntimeException|gRPC.*failed|gRPC.*error|UNAVAILABLE.*grpc|grpc.*service.*error"
       confidence: 0.89
     
     secondary_patterns:
@@ -146,7 +146,7 @@ patterns:
     name: "OpenAPI/Swagger Configuration Error"
     
     primary_pattern:
-      regex: "OpenAPI.*failed|Swagger.*initialization.*failed"
+      regex: "OpenAPI.*failed|Swagger.*failed|OpenAPI.*error|Swagger.*error|API.*documentation.*failed"
       confidence: 0.82
     
     secondary_patterns:
@@ -188,7 +188,7 @@ patterns:
     name: "REST Endpoint Mapping Error"
     
     primary_pattern:
-      regex: "@Path.*mapping.*failed|REST.*endpoint.*conflict|JAX-RS.*mapping.*error"
+      regex: "REST.*endpoint.*failed|endpoint.*mapping.*failed|JAX-RS.*error|Path.*mapping.*error|endpoint.*conflict"
       confidence: 0.87
     
     secondary_patterns:
@@ -232,7 +232,7 @@ patterns:
     name: "JSON Serialization Error"
     
     primary_pattern:
-      regex: "JsonbException|JsonProcessingException|JSON.*serialization.*failed"
+      regex: "JsonbException|JsonProcessingException|JSON.*serialization.*failed|JSON.*error|serialization.*error"
       confidence: 0.90
     
     secondary_patterns:

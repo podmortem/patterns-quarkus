@@ -1,6 +1,6 @@
 metadata:
   library_id: "quarkus-security-patterns"
-  version: "1.0.0"
+  version: "1.1.0"
   maintainer: "quarkus-community"
   compatibility: ["quarkus-2.x", "quarkus-3.x"]
   dependencies: ["quarkus-core-patterns"]
@@ -17,7 +17,7 @@ patterns:
     name: "Security Authentication Failure"
     
     primary_pattern:
-      regex: "AuthenticationException|UnauthorizedException|Security.*authentication.*failed"
+      regex: "AuthenticationException|UnauthorizedException|authentication.*failed|auth.*failed|login.*failed"
       confidence: 0.89
     
     secondary_patterns:
@@ -27,7 +27,7 @@ patterns:
       - regex: "@RolesAllowed|@Authenticated"
         weight: 0.4
         proximity_window: 25
-      - regex: "JWT.*validation.*failed"
+      - regex: "JWT.*validation.*failed|JWT.*failed"
         weight: 0.6
         proximity_window: 20
     
@@ -60,7 +60,7 @@ patterns:
     name: "JWT Token Validation Failure"
     
     primary_pattern:
-      regex: "JWT.*invalid|JWTException|Token.*expired|JsonWebTokenException"
+      regex: "JWT.*invalid|JWTException|Token.*expired|JsonWebTokenException|jwt.*failed|token.*invalid"
       confidence: 0.92
     
     secondary_patterns:
@@ -104,7 +104,7 @@ patterns:
     name: "OAuth2 Authorization Failure"
     
     primary_pattern:
-      regex: "OAuthException|OAuth2.*failed|Authorization.*code.*invalid"
+      regex: "OAuthException|OAuth2.*failed|Authorization.*failed|oauth.*error|authorization.*error"
       confidence: 0.87
     
     secondary_patterns:
@@ -147,7 +147,7 @@ patterns:
     name: "RBAC Permission Denied"
     
     primary_pattern:
-      regex: "ForbiddenException|Access.*denied|Permission.*denied"
+      regex: "ForbiddenException|Access.*denied|Permission.*denied|Forbidden|403|unauthorized"
       confidence: 0.85
     
     secondary_patterns:
@@ -190,7 +190,7 @@ patterns:
     name: "Security Context Missing"
     
     primary_pattern:
-      regex: "SecurityContext.*null|SecurityIdentity.*not.*found|Authentication.*required"
+      regex: "SecurityContext.*null|SecurityIdentity.*not.*found|Authentication.*required|security.*context.*missing"
       confidence: 0.88
     
     secondary_patterns:
