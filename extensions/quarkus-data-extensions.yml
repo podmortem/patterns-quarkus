@@ -57,8 +57,7 @@ patterns:
       include_stack_trace: true
     
     sequence_patterns:
-      - id: "database_connection_sequence"
-        description: "Sequence of database connection attempts and failures"
+      - description: "Sequence of database connection attempts and failures"
         bonus_multiplier: 0.6
         events:
           - regex: "Initializing datasource|quarkus\\.datasource"

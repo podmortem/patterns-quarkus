@@ -231,8 +231,7 @@ patterns:
       include_stack_trace: true
     
     sequence_patterns:
-      - id: "memory_exhaustion_sequence"
-        description: "Sequence of memory exhaustion leading to OOM"
+      - description: "Sequence of memory exhaustion leading to OOM"
         bonus_multiplier: 0.7
         events:
           - regex: "Quarkus.*started|Installed features"

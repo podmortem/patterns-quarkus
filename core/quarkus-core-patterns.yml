@@ -56,8 +56,7 @@ patterns:
       highlight_keywords: ["ERROR", "FATAL", "Failed", "Exception"]
     
     sequence_patterns:
-      - id: "startup_sequence_failure"
-        description: "Sequence of startup initialization failures"
+      - description: "Sequence of startup initialization failures"
         bonus_multiplier: 0.5
         events:
           - regex: "Quarkus.*started|Profile.*activated"
@@ -112,8 +111,7 @@ patterns:
       include_stack_trace: true
     
     sequence_patterns:
-      - id: "cdi_resolution_sequence"
-        description: "Sequence of CDI bean resolution failures"
+      - description: "Sequence of CDI bean resolution failures"
         bonus_multiplier: 0.4
         events:
           - regex: "Building Arc container|Arc CDI.*initializ"
