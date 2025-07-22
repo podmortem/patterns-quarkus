@@ -55,6 +55,18 @@ patterns:
       lines_before: 20
       lines_after: 10
       include_stack_trace: true
+    
+    sequence_patterns:
+      - id: "database_connection_sequence"
+        description: "Sequence of database connection attempts and failures"
+        bonus_multiplier: 0.6
+        events:
+          - regex: "Initializing datasource|quarkus\\.datasource"
+            max_time_before: "5s"
+          - regex: "HikariCP|Agroal.*connection"
+            max_time_before: "3s"
+          - regex: "SQLException|Connection.*refused|Connection.*failed"
+            max_time_before: "2s"
 
   - id: "hibernate_orm_configuration_error"
     name: "Hibernate ORM Configuration Error"

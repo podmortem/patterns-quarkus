@@ -54,6 +54,18 @@ patterns:
       lines_after: 10
       include_stack_trace: true
       highlight_keywords: ["ERROR", "FATAL", "Failed", "Exception"]
+    
+    sequence_patterns:
+      - id: "startup_sequence_failure"
+        description: "Sequence of startup initialization failures"
+        bonus_multiplier: 0.5
+        events:
+          - regex: "Quarkus.*started|Profile.*activated"
+            max_time_before: "5s"
+          - regex: "Failed to start|startup failed|RuntimeException"
+            max_time_before: "3s"
+          - regex: "Unable to start|application.*exiting"
+            max_time_before: "2s"
 
   - id: "arc_cdi_injection_failure"
     name: "Arc CDI Injection Failure"
@@ -98,6 +110,18 @@ patterns:
       lines_before: 20
       lines_after: 10
       include_stack_trace: true
+    
+    sequence_patterns:
+      - id: "cdi_resolution_sequence"
+        description: "Sequence of CDI bean resolution failures"
+        bonus_multiplier: 0.4
+        events:
+          - regex: "Building Arc container|Arc CDI.*initializ"
+            max_time_before: "3s"
+          - regex: "UnsatisfiedResolutionException|AmbiguousResolutionException"
+            max_time_before: "2s"
+          - regex: "@Inject.*failed|injection.*failed"
+            max_time_before: "1s"
 
   - id: "configuration_property_error"
     name: "Configuration Property Error"

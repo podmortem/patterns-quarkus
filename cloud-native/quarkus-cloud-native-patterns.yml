@@ -229,6 +229,18 @@ patterns:
       lines_before: 15
       lines_after: 10
       include_stack_trace: true
+    
+    sequence_patterns:
+      - id: "memory_exhaustion_sequence"
+        description: "Sequence of memory exhaustion leading to OOM"
+        bonus_multiplier: 0.7
+        events:
+          - regex: "Quarkus.*started|Installed features"
+            max_time_before: "10s"
+          - regex: "High memory usage|memory.*detected"
+            max_time_before: "5s"
+          - regex: "OutOfMemoryError|memory.*exceeded|memory.*exhaustion"
+            max_time_before: "3s"
 
   - id: "service_mesh_communication_error"
     name: "Service Mesh Communication Error"
