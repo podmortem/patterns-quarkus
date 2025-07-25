@@ -199,8 +199,146 @@ patterns:
       lines_after: 10
       include_stack_trace: true
 
+  - id: "postgresql_connection_failure"
+    name: "PostgreSQL Connection Failure"
+    
+    primary_pattern:
+      regex: "org\\.postgresql\\.Driver|postgresql.*connection.*failed|Connection to.*5432.*refused|PostgreSQL.*error|psql.*error"
+      confidence: 0.95
+    
+    secondary_patterns:
+      - regex: "Connection refused"
+        weight: 0.6
+        proximity_window: 20
+      - regex: ":5432\\b"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "postmaster.*TCP"
+        weight: 0.4
+        proximity_window: 25
+    
+    severity: "CRITICAL"
+    category: ["database", "postgresql", "connectivity", "root_cause"]
+    
+    remediation:
+      description: "PostgreSQL database connection failed - likely root cause"
+      common_causes:
+        - "PostgreSQL service is not running"
+        - "Incorrect PostgreSQL connection URL or port"
+        - "Network connectivity to PostgreSQL server"
+        - "PostgreSQL authentication/credentials issue"
+      
+      suggested_commands:
+        - "Check if PostgreSQL service is running: systemctl status postgresql"
+        - "Verify PostgreSQL connection URL and port in application configuration"
+        - "Test connectivity: psql -h <host> -p <port> -U <username>"
+        - "Check PostgreSQL logs for connection errors"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/datasource"
+        - "https://www.postgresql.org/docs/current/runtime-config-connection.html"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+      include_stack_trace: true
+
+  - id: "h2_compatibility_error"
+    name: "H2 Database Compatibility Error"
+    
+    primary_pattern:
+      regex: "Unable to determine H2 database version|H2.*version.*unknown|H2.*compatibility.*error|H2.*database.*error"
+      confidence: 0.88
+    
+    secondary_patterns:
+      - regex: "ServiceException"
+        weight: 0.4
+        proximity_window: 20
+      - regex: "JdbcEnvironment"
+        weight: 0.3
+        proximity_window: 15
+      - regex: "hibernate.*H2"
+        weight: 0.5
+        proximity_window: 25
+    
+    severity: "MEDIUM"
+    category: ["database", "h2", "compatibility", "secondary_effect"]
+    
+    remediation:
+      description: "H2 database compatibility issue - often a secondary effect of primary connection failure"
+      common_causes:
+        - "Fallback to H2 after primary database connection failed"
+        - "H2 version mismatch with Hibernate"
+        - "Missing H2 configuration for fallback"
+        - "Primary database unavailable, falling back to embedded H2"
+      
+      suggested_commands:
+        - "Check primary database connection first (PostgreSQL, MySQL, etc.)"
+        - "Verify H2 version compatibility with Hibernate"
+        - "Review datasource fallback configuration"
+        - "Check if H2 is intended as primary or fallback database"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/datasource"
+        - "https://h2database.com/html/tutorial.html"
+    
+    context_extraction:
+      lines_before: 20
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "mysql_connection_failure"
+    name: "MySQL Connection Failure"
+    
+    primary_pattern:
+      regex: "com\\.mysql\\.cj\\.jdbc|mysql.*connection.*failed|Connection to.*3306.*refused|MySQL.*error|Communications link failure"
+      confidence: 0.95
+    
+    secondary_patterns:
+      - regex: "Connection refused"
+        weight: 0.6
+        proximity_window: 20
+      - regex: ":3306\\b"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "mysql.*timeout"
+        weight: 0.4
+        proximity_window: 25
+    
+    severity: "CRITICAL"
+    category: ["database", "mysql", "connectivity", "root_cause"]
+    
+    remediation:
+      description: "MySQL database connection failed - likely root cause"
+      common_causes:
+        - "MySQL service is not running"
+        - "Incorrect MySQL connection URL or port"
+        - "Network connectivity to MySQL server"
+        - "MySQL authentication/credentials issue"
+      
+      suggested_commands:
+        - "Check if MySQL service is running: systemctl status mysql"
+        - "Verify MySQL connection URL and port in application configuration"
+        - "Test connectivity: mysql -h <host> -P <port> -u <username> -p"
+        - "Check MySQL logs for connection errors"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/datasource"
+        - "https://dev.mysql.com/doc/refman/8.0/en/problems-connecting.html"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+      include_stack_trace: true
+
 related_patterns:
   - id: "database_connection_failure"
     related_to: ["hibernate_orm_configuration_error", "transaction_management_error"]
+  - id: "postgresql_connection_failure"
+    related_to: ["database_connection_failure", "h2_compatibility_error"]
+  - id: "mysql_connection_failure"
+    related_to: ["database_connection_failure", "h2_compatibility_error"]
+  - id: "h2_compatibility_error"
+    related_to: ["postgresql_connection_failure", "mysql_connection_failure", "database_connection_failure"]
   - id: "panache_query_error"
     related_to: ["hibernate_orm_configuration_error"] 
