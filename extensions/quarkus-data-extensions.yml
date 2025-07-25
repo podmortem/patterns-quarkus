@@ -274,7 +274,6 @@ patterns:
       
       suggested_commands:
         - "Check primary database connection first (PostgreSQL, MySQL, etc.)"
-        - "Verify H2 version compatibility with Hibernate"
         - "Review datasource fallback configuration"
         - "Check if H2 is intended as primary or fallback database"
       
