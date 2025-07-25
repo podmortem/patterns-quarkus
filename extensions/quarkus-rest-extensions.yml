@@ -272,9 +272,55 @@ patterns:
       lines_after: 10
       include_stack_trace: true
 
+  - id: "service_to_service_connection_failure"
+    name: "Service-to-Service Connection Failure"
+    
+    primary_pattern:
+      regex: "Connection refused.*[a-z-]+service|service\\..*\\.svc\\.cluster\\.local.*refused|Connection refused.*http://[a-z-]+-service"
+      confidence: 0.95
+    
+    secondary_patterns:
+      - regex: "svc\\.cluster\\.local"
+        weight: 0.5
+        proximity_window: 30
+      - regex: "RestClientBuilder|RestClient"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "[a-z-]+-service\\.[a-z-]+\\.(svc\\.)?cluster\\.local"
+        weight: 0.6
+        proximity_window: 20
+    
+    severity: "CRITICAL"
+    category: ["services", "connectivity", "root_cause"]
+    
+    remediation:
+      description: "Service-to-service connection failed - likely root cause of cascade failure"
+      common_causes:
+        - "Target service is down or not responding"
+        - "Network connectivity issues between services"
+        - "Service discovery configuration problems" 
+        - "Load balancer or ingress issues"
+      
+      suggested_commands:
+        - "Check target service health: kubectl get pods -l app=<service-name>"
+        - "Verify service endpoints: kubectl get svc <service-name>"
+        - "Test connectivity: kubectl exec -it pod -- curl http://<service-name>:8080/health"
+        - "Check service mesh configuration if using Istio/Linkerd"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/rest-client"
+        - "https://kubernetes.io/docs/concepts/services-networking/"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+      include_stack_trace: true
+
 related_patterns:
   - id: "rest_client_connection_error"
-    related_to: ["rest_client_timeout_error", "json_serialization_error"]
+    related_to: ["rest_client_timeout_error", "json_serialization_error", "service_to_service_connection_failure"]
+  - id: "service_to_service_connection_failure"
+    related_to: ["rest_client_connection_error", "rest_client_timeout_error"]
   - id: "grpc_service_error"
     related_to: ["rest_client_connection_error"]
   - id: "rest_endpoint_mapping_error"
