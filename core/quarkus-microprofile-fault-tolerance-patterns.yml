@@ -1,0 +1,390 @@
+metadata:
+  library_id: "quarkus-microprofile-fault-tolerance-patterns"
+  version: "1.1.0"
+  maintainer: "quarkus-community"
+  compatibility: ["quarkus-2.x", "quarkus-3.x"]
+  dependencies: ["quarkus-core-patterns"]
+  description: "MicroProfile Fault Tolerance patterns for circuit breakers, retries, timeouts, and fallbacks (SmallRye, Resilience4j, Hystrix)"
+
+categories:
+  - fault_tolerance
+  - circuit_breaker
+  - retry
+  - timeout
+  - fallback
+  - bulkhead
+  - rate_limit
+
+patterns:
+  - id: "circuit_breaker_open"
+    name: "Circuit Breaker Opened"
+    
+    primary_pattern:
+      regex: "Circuit.*[Bb]reaker.*open|circuit.*open|breaker.*triggered|circuit.*state.*OPEN"
+      confidence: 0.90
+    
+    secondary_patterns:
+      - regex: "faulttolerance|resilience|hystrix|microprofile"
+        weight: 0.4
+        proximity_window: 35
+      - regex: "@CircuitBreaker|@HystrixCommand|CircuitBreakerImpl"
+        weight: 0.5
+        proximity_window: 30
+    
+    severity: "HIGH"
+    category: ["circuit_breaker", "fault_tolerance", "cascade_indicator"]
+    
+    remediation:
+      description: "Circuit breaker opened to prevent cascading failures - downstream service is failing"
+      common_causes:
+        - "Downstream service is unavailable or failing"
+        - "Too many consecutive failures reached threshold"
+        - "Timeout threshold exceeded multiple times"
+        - "Network issues causing repeated failures"
+      
+      suggested_commands:
+        - "Check health of the service protected by circuit breaker"
+        - "Review circuit breaker configuration: failure ratio, request volume threshold"
+        - "kubectl logs <downstream-service-pod> to check downstream service"
+        - "Check if circuit breaker threshold is too sensitive"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/smallrye-fault-tolerance"
+        - "https://microprofile.io/project/eclipse/microprofile-fault-tolerance"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+      include_stack_trace: false
+
+  - id: "circuit_breaker_half_open"
+    name: "Circuit Breaker Half-Open"
+    
+    primary_pattern:
+      regex: "Circuit.*breaker.*half-open|circuit.*breaker.*state.*HALF_OPEN|Testing.*circuit.*breaker"
+      confidence: 0.92
+    
+    secondary_patterns:
+      - regex: "CircuitBreakerImpl|circuit.*breaker.*implementation"
+        weight: 0.4
+        proximity_window: 25
+      - regex: "probe.*request|test.*connection|half.*open.*state"
+        weight: 0.5
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["circuit_breaker", "fault_tolerance", "recovery"]
+    
+    remediation:
+      description: "Circuit breaker is testing if the downstream service has recovered"
+      common_causes:
+        - "Circuit breaker delay period has elapsed"
+        - "Testing if service has recovered"
+        - "Attempting to restore normal operation"
+      
+      suggested_commands:
+        - "Monitor if subsequent requests succeed"
+        - "Check downstream service health status"
+        - "Review circuit breaker success threshold configuration"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/smallrye-fault-tolerance#circuit-breaker"
+    
+    context_extraction:
+      lines_before: 8
+      lines_after: 5
+
+  - id: "circuit_breaker_closed"
+    name: "Circuit Breaker Closed"
+    
+    primary_pattern:
+      regex: "Circuit.*breaker.*closed|circuit.*breaker.*state.*CLOSED|Circuit.*restored|service.*recovered"
+      confidence: 0.90
+    
+    secondary_patterns:
+      - regex: "CircuitBreakerImpl"
+        weight: 0.5
+        proximity_window: 20
+      - regex: "success.*threshold.*reached"
+        weight: 0.4
+        proximity_window: 25
+    
+    severity: "INFO"
+    category: ["circuit_breaker", "fault_tolerance", "recovery"]
+    
+    remediation:
+      description: "Circuit breaker has closed - service has recovered"
+      common_causes:
+        - "Downstream service has recovered"
+        - "Success threshold reached in half-open state"
+        - "Normal operation restored"
+      
+      suggested_commands:
+        - "Continue monitoring service health"
+        - "Review what caused the initial circuit breaker opening"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/smallrye-fault-tolerance"
+    
+    context_extraction:
+      lines_before: 5
+      lines_after: 3
+
+  - id: "circuit_breaker_shutdown_pending"
+    name: "Circuit Breaker Shutdown with Pending Requests"
+    
+    primary_pattern:
+      regex: "Circuit.*[Bb]reaker.*shutdown|breaker.*pending|circuit.*closing.*requests"
+      confidence: 0.85
+    
+    secondary_patterns:
+      - regex: "pending.*requests|queued.*operations"
+        weight: 0.5
+        proximity_window: 20
+    
+    severity: "MEDIUM"
+    category: ["circuit_breaker", "shutdown", "fault_tolerance"]
+    
+    remediation:
+      description: "Application shutting down with unprocessed requests in circuit breaker"
+      common_causes:
+        - "Application shutdown during high load"
+        - "Graceful shutdown interrupted"
+        - "Circuit breaker had queued requests"
+      
+      suggested_commands:
+        - "Review shutdown hooks and graceful shutdown configuration"
+        - "Check if shutdown timeout is sufficient"
+        - "Consider implementing request draining before shutdown"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/lifecycle"
+        - "https://quarkus.io/guides/smallrye-fault-tolerance"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+
+  - id: "retry_max_attempts_exceeded"
+    name: "Retry Max Attempts Exceeded"
+    
+    primary_pattern:
+      regex: "@Retry.*max.*attempts.*exceeded|Retry.*exhausted|Max.*retries.*reached|retry.*limit.*exceeded"
+      confidence: 0.91
+    
+    secondary_patterns:
+      - regex: "@Retry"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "attempt.*\\d+.*of.*\\d+"
+        weight: 0.4
+        proximity_window: 20
+      - regex: "faulttolerance|microprofile.*fault"
+        weight: 0.3
+        proximity_window: 30
+    
+    severity: "MEDIUM"
+    category: ["retry", "fault_tolerance"]
+    
+    remediation:
+      description: "Operation failed after exhausting all retry attempts"
+      common_causes:
+        - "Persistent failure in downstream service"
+        - "Network issues not resolving"
+        - "Invalid request being retried"
+        - "Retry configuration too aggressive"
+      
+      suggested_commands:
+        - "Check if the failure is transient or permanent"
+        - "Review retry configuration: maxRetries, delay, jitter"
+        - "Check if exponential backoff would help"
+        - "Consider if operation should be retryable"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/smallrye-fault-tolerance#retry"
+        - "https://smallrye.io/docs/smallrye-fault-tolerance/6.2.6/usage/retry.html"
+    
+    context_extraction:
+      lines_before: 12
+      lines_after: 8
+
+  - id: "timeout_exceeded"
+    name: "Fault Tolerance Timeout Exceeded"
+    
+    primary_pattern:
+      regex: "@Timeout.*exceeded|TimeoutException.*fault.*tolerance|Operation.*timed.*out.*@Timeout"
+      confidence: 0.90
+    
+    secondary_patterns:
+      - regex: "@Timeout"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "faulttolerance.*timeout|microprofile.*timeout"
+        weight: 0.4
+        proximity_window: 30
+      - regex: "timeout.*value.*\\d+"
+        weight: 0.3
+        proximity_window: 30
+    
+    severity: "MEDIUM"
+    category: ["timeout", "fault_tolerance", "performance"]
+    
+    remediation:
+      description: "Operation exceeded configured fault tolerance timeout"
+      common_causes:
+        - "Operation taking longer than expected"
+        - "Downstream service slow response"
+        - "Timeout value too aggressive"
+        - "Resource contention or deadlock"
+      
+      suggested_commands:
+        - "Review @Timeout configuration value"
+        - "Check if operation is CPU or I/O bound"
+        - "Monitor downstream service response times"
+        - "Consider async operations for long-running tasks"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/smallrye-fault-tolerance#timeout"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 8
+
+  - id: "fallback_method_invoked"
+    name: "Fallback Method Invoked"
+    
+    primary_pattern:
+      regex: "@Fallback.*invoked|Fallback.*method.*called|Using.*fallback|Executing.*fallback.*method"
+      confidence: 0.88
+    
+    secondary_patterns:
+      - regex: "@Fallback"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "fallbackMethod|FallbackHandler"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "service.*unavailable.*fallback"
+        weight: 0.4
+        proximity_window: 30
+    
+    severity: "LOW"
+    category: ["fallback", "fault_tolerance", "degraded_service"]
+    
+    remediation:
+      description: "Fallback method executed due to primary method failure"
+      common_causes:
+        - "Primary service unavailable"
+        - "Circuit breaker open"
+        - "Timeout or retry exhausted"
+        - "Exception in primary method"
+      
+      suggested_commands:
+        - "Check why primary method failed"
+        - "Verify fallback provides adequate functionality"
+        - "Monitor how often fallback is used"
+        - "Consider caching for fallback data"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/smallrye-fault-tolerance#fallback"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+
+  - id: "bulkhead_rejected"
+    name: "Bulkhead Rejected Execution"
+    
+    primary_pattern:
+      regex: "BulkheadException|Bulkhead.*rejected|Bulkhead.*full|concurrent.*execution.*limit"
+      confidence: 0.89
+    
+    secondary_patterns:
+      - regex: "@Bulkhead"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "max.*concurrent.*calls"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "faulttolerance.*bulkhead|microprofile.*bulkhead"
+        weight: 0.4
+        proximity_window: 30
+    
+    severity: "MEDIUM"
+    category: ["bulkhead", "fault_tolerance", "resource_limit"]
+    
+    remediation:
+      description: "Bulkhead rejected execution due to concurrent limit"
+      common_causes:
+        - "Too many concurrent requests"
+        - "Bulkhead size too small"
+        - "Slow downstream service causing backlog"
+        - "Traffic spike"
+      
+      suggested_commands:
+        - "Review @Bulkhead value configuration"
+        - "Check if downstream service is slow"
+        - "Consider increasing bulkhead size"
+        - "Implement request queuing or backpressure"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/smallrye-fault-tolerance#bulkhead"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+
+  - id: "rate_limit_exceeded"
+    name: "Rate Limit Exceeded"
+    
+    primary_pattern:
+      regex: "RateLimitException|Rate.*limit.*exceeded|@RateLimit.*exceeded|Too.*many.*requests.*rate"
+      confidence: 0.90
+    
+    secondary_patterns:
+      - regex: "@RateLimit"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "requests.*per.*second|rate.*window"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "429.*Too.*Many.*Requests"
+        weight: 0.7
+        proximity_window: 15
+    
+    severity: "MEDIUM"
+    category: ["rate_limit", "fault_tolerance", "throttling"]
+    
+    remediation:
+      description: "Rate limit exceeded for protected method"
+      common_causes:
+        - "Client sending too many requests"
+        - "Rate limit configuration too restrictive"
+        - "Burst of legitimate traffic"
+        - "Potential DoS attempt"
+      
+      suggested_commands:
+        - "Review @RateLimit configuration"
+        - "Check if rate limit is per-client or global"
+        - "Consider implementing request queuing"
+        - "Monitor for abuse patterns"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/smallrye-fault-tolerance"
+        - "https://smallrye.io/docs/smallrye-fault-tolerance/6.2.6/reference/annotations.html#_ratelimit"
+    
+    context_extraction:
+      lines_before: 8
+      lines_after: 5
+
+
+
+related_patterns:
+  - id: "circuit_breaker_open"
+    related_to: ["retry_max_attempts_exceeded", "fallback_method_invoked"]
+  - id: "circuit_breaker_half_open"
+    related_to: ["circuit_breaker_open", "circuit_breaker_closed"]
+  - id: "retry_max_attempts_exceeded"
+    related_to: ["circuit_breaker_open", "timeout_exceeded"]
+  - id: "fallback_method_invoked"
+    related_to: ["circuit_breaker_open", "retry_max_attempts_exceeded", "timeout_exceeded"]
