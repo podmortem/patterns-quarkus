@@ -1,0 +1,352 @@
+metadata:
+  library_id: "quarkus-lifecycle-patterns"
+  version: "1.0.0"
+  maintainer: "quarkus-community"
+  compatibility: ["quarkus-2.x", "quarkus-3.x"]
+  dependencies: []
+  description: "Application lifecycle patterns for startup, shutdown, and runtime state transitions"
+
+categories:
+  - lifecycle
+  - startup
+  - shutdown
+  - initialization
+  - termination
+
+patterns:
+  - id: "quarkus_startup_success"
+    name: "Quarkus Application Started Successfully"
+    
+    primary_pattern:
+      regex: "Quarkus.*started in.*\\d+\\.\\d+s|Application.*started.*in.*\\d+\\.\\d+s|started in.*\\d+\\.\\d+ms"
+      confidence: 0.95
+    
+    secondary_patterns:
+      - regex: "Installed features"
+        weight: 0.6
+        proximity_window: 10
+      - regex: "Listening on.*http://|HTTP server listening"
+        weight: 0.5
+        proximity_window: 15
+      - regex: "Profile.*activated|Running.*mode"
+        weight: 0.4
+        proximity_window: 20
+    
+    severity: "INFO"
+    category: ["startup", "lifecycle", "success"]
+    
+    remediation:
+      description: "Application started successfully"
+      common_causes:
+        - "Normal application startup"
+      
+      suggested_commands:
+        - "Monitor application health endpoints"
+        - "Check application metrics"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/lifecycle"
+    
+    context_extraction:
+      lines_before: 5
+      lines_after: 3
+
+  - id: "quarkus_graceful_shutdown"
+    name: "Quarkus Graceful Shutdown"
+    
+    primary_pattern:
+      regex: "Application.*stopping|Quarkus.*stopped.*in.*\\d+\\.\\d+s|graceful.*shutdown|ApplicationLifecycleManager.*stopping"
+      confidence: 0.92
+    
+    secondary_patterns:
+      - regex: "shutdown-thread"
+        weight: 0.7
+        proximity_window: 15
+      - regex: "stopped in.*\\d+\\.\\d+s"
+        weight: 0.6
+        proximity_window: 10
+      - regex: "Shutting down.*gracefully"
+        weight: 0.5
+        proximity_window: 20
+    
+    severity: "INFO"
+    category: ["shutdown", "lifecycle", "graceful"]
+    
+    remediation:
+      description: "Application shutting down gracefully"
+      common_causes:
+        - "Normal application shutdown"
+        - "Kubernetes pod termination"
+        - "Manual shutdown request"
+      
+      suggested_commands:
+        - "Check if shutdown was planned"
+        - "Review shutdown hooks execution"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/lifecycle"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 5
+
+  - id: "quarkus_forced_shutdown"
+    name: "Quarkus Forced Shutdown"
+    
+    primary_pattern:
+      regex: "forced.*shutdown|emergency.*stop|critical.*failure.*shutdown|abnormal.*termination"
+      confidence: 0.88
+    
+    secondary_patterns:
+      - regex: "unrecoverable.*error|fatal.*error"
+        weight: 0.6
+        proximity_window: 25
+      - regex: "system.*failure|critical.*state"
+        weight: 0.5
+        proximity_window: 30
+    
+    severity: "CRITICAL"
+    category: ["shutdown", "lifecycle", "failure"]
+    
+    remediation:
+      description: "Application forced to shutdown due to critical failures"
+      common_causes:
+        - "Critical system failure"
+        - "Unrecoverable error condition"
+        - "Resource exhaustion"
+        - "Fatal application error"
+      
+      suggested_commands:
+        - "Investigate root cause of shutdown"
+        - "Check logs before shutdown for failure patterns"
+        - "Review health check failures"
+        - "Check circuit breaker states"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/lifecycle"
+        - "https://quarkus.io/guides/smallrye-fault-tolerance"
+    
+    context_extraction:
+      lines_before: 20
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "startup_bean_initialization_error"
+    name: "Startup Bean Initialization Error"
+    
+    primary_pattern:
+      regex: "@Startup.*failed|StartupEvent.*error|Bean.*initialization.*failed|@PostConstruct.*failed"
+      confidence: 0.91
+    
+    secondary_patterns:
+      - regex: "@ApplicationScoped|@Singleton"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "CDI.*initialization"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "Arc.*startup"
+        weight: 0.4
+        proximity_window: 30
+    
+    severity: "HIGH"
+    category: ["startup", "initialization", "beans"]
+    
+    remediation:
+      description: "Bean initialization failed during startup"
+      common_causes:
+        - "Missing required configuration"
+        - "Dependency injection failures"
+        - "External service unavailable during startup"
+        - "Invalid initialization logic"
+      
+      suggested_commands:
+        - "Check @ConfigProperty values"
+        - "Verify all dependencies are satisfied"
+        - "Review @PostConstruct methods"
+        - "Check for circular dependencies"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/cdi"
+        - "https://quarkus.io/guides/lifecycle"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "shutdown_hook_execution_error"
+    name: "Shutdown Hook Execution Error"
+    
+    primary_pattern:
+      regex: "@PreDestroy.*failed|Shutdown.*hook.*failed|Error.*during.*shutdown|shutdown.*hook.*error"
+      confidence: 0.89
+    
+    secondary_patterns:
+      - regex: "@PreDestroy"
+        weight: 0.7
+        proximity_window: 20
+      - regex: "ShutdownEvent"
+        weight: 0.6
+        proximity_window: 25
+      - regex: "cleanup.*failed"
+        weight: 0.5
+        proximity_window: 30
+    
+    severity: "MEDIUM"
+    category: ["shutdown", "lifecycle", "cleanup"]
+    
+    remediation:
+      description: "Error occurred during shutdown hook execution"
+      common_causes:
+        - "Resource cleanup failures"
+        - "Timeout during shutdown"
+        - "External service unavailable during cleanup"
+        - "Exception in @PreDestroy methods"
+      
+      suggested_commands:
+        - "Review @PreDestroy methods"
+        - "Check shutdown timeout configuration"
+        - "Ensure cleanup operations are idempotent"
+        - "Add error handling to shutdown hooks"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/lifecycle"
+    
+    context_extraction:
+      lines_before: 12
+      lines_after: 8
+      include_stack_trace: true
+
+  - id: "application_not_ready"
+    name: "Application Not Ready"
+    
+    primary_pattern:
+      regex: "not.*ready|readiness.*fail|ready.*check.*fail|application.*unavailable"
+      confidence: 0.85
+    
+    secondary_patterns:
+      - regex: "health.*check|health.*status"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "dependency.*fail|service.*down"
+        weight: 0.4
+        proximity_window: 30
+    
+    severity: "HIGH"
+    category: ["readiness", "health", "lifecycle"]
+    
+    remediation:
+      description: "Application readiness check failed"
+      common_causes:
+        - "Dependencies not ready"
+        - "Database connection not established"
+        - "External services unavailable"
+        - "Initialization not complete"
+      
+      suggested_commands:
+        - "Check /q/health/ready endpoint"
+        - "Review custom readiness checks"
+        - "Verify all dependencies are available"
+        - "Check initialization sequence"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/health-guide"
+        - "https://quarkus.io/guides/microprofile-health"
+    
+    context_extraction:
+      lines_before: 10
+      lines_after: 8
+
+  - id: "application_liveness_failure"
+    name: "Application Liveness Failure"
+    
+    primary_pattern:
+      regex: "Liveness.*probe.*failed|/q/health/live.*failed|liveness.*check.*DOWN|Application.*unhealthy"
+      confidence: 0.91
+    
+    secondary_patterns:
+      - regex: "SmallRyeHealthReporter"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "health.*status.*DOWN"
+        weight: 0.7
+        proximity_window: 15
+      - regex: "deadlock|blocked|frozen"
+        weight: 0.8
+        proximity_window: 30
+    
+    severity: "CRITICAL"
+    category: ["liveness", "health", "lifecycle", "root_cause"]
+    
+    remediation:
+      description: "Application liveness check failed - application may be deadlocked"
+      common_causes:
+        - "Application deadlock"
+        - "Event loop blocked"
+        - "Thread pool exhaustion"
+        - "Critical component failure"
+      
+      suggested_commands:
+        - "Check /q/health/live endpoint"
+        - "Generate thread dump for deadlock analysis"
+        - "Review custom liveness checks"
+        - "Check for blocking operations on event loop"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/health-guide"
+        - "https://quarkus.io/guides/vertx"
+    
+    context_extraction:
+      lines_before: 15
+      lines_after: 10
+      include_stack_trace: true
+
+  - id: "hot_reload_triggered"
+    name: "Hot Reload Triggered"
+    
+    primary_pattern:
+      regex: "Hot.*reload.*triggered|Live.*reload.*performed|Application.*restarted.*due.*to.*changes|Restarting.*application"
+      confidence: 0.88
+    
+    secondary_patterns:
+      - regex: "File.*changed|Class.*modified"
+        weight: 0.6
+        proximity_window: 20
+      - regex: "dev.*mode"
+        weight: 0.5
+        proximity_window: 25
+      - regex: "Recompiling"
+        weight: 0.4
+        proximity_window: 30
+    
+    severity: "INFO"
+    category: ["development", "lifecycle", "reload"]
+    
+    remediation:
+      description: "Application hot reload in development mode"
+      common_causes:
+        - "Source code changes detected"
+        - "Configuration file modified"
+        - "Resource file updated"
+      
+      suggested_commands:
+        - "This is normal in development mode"
+        - "Check compilation errors if reload fails"
+      
+      documentation_links:
+        - "https://quarkus.io/guides/dev-mode-differences"
+    
+    context_extraction:
+      lines_before: 5
+      lines_after: 10
+
+related_patterns:
+  - id: "quarkus_forced_shutdown"
+    related_to: ["application_liveness_failure", "application_not_ready"]
+  - id: "startup_bean_initialization_error"
+    related_to: ["quarkus_startup_success"]
+  - id: "shutdown_hook_execution_error"
+    related_to: ["quarkus_graceful_shutdown", "quarkus_forced_shutdown"]
+  - id: "application_not_ready"
+    related_to: ["application_liveness_failure", "quarkus_forced_shutdown"]
