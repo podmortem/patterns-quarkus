@@ -12,43 +12,39 @@ categories:
   - async_processing
 
 patterns:
-  - id: "redis_cache_error"
-    name: "Redis Cache Error"
+  - id: "cache_operation_error"
+    name: "Cache Operation Error"
     
     primary_pattern:
-      regex: "RedisException|Redis.*connection.*failed|Redis.*error|Cache.*operation.*failed|cache.*error"
-      confidence: 0.87
+      regex: "cache.*error|cache.*fail|caching.*problem|cache.*operation.*fail"
+      confidence: 0.82
     
     secondary_patterns:
-      - regex: "quarkus\\.redis"
-        weight: 0.5
-        proximity_window: 30
-      - regex: "Jedis|Lettuce"
-        weight: 0.4
-        proximity_window: 25
-      - regex: "@CacheResult|@CacheRemove"
+      - regex: "redis|memcached|hazelcast|infinispan"
         weight: 0.3
-        proximity_window: 20
+        proximity_window: 35
+      - regex: "@Cache|cache.*annotation"
+        weight: 0.3
+        proximity_window: 30
     
     severity: "MEDIUM"
-    category: ["cache", "redis"]
+    category: ["cache", "performance"]
     
     remediation:
-      description: "Redis cache operation failed"
+      description: "Cache operation failed"
       common_causes:
-        - "Redis server not running or unreachable"
+        - "Cache server not running or unreachable"
         - "Authentication/authorization issues"
         - "Network connectivity problems"
         - "Cache configuration errors"
       
       suggested_commands:
-        - "Verify Redis server is running and accessible"
-        - "Check Redis connection configuration"
-        - "Test Redis connectivity with redis-cli"
+        - "Verify cache server is running and accessible"
+        - "Check cache connection configuration"
+        - "Test cache connectivity"
         - "Review cache key and serialization configuration"
       
       documentation_links:
-        - "https://quarkus.io/guides/redis"
         - "https://quarkus.io/guides/cache"
     
     context_extraction:
@@ -274,7 +270,7 @@ patterns:
       include_stack_trace: true
 
 related_patterns:
-  - id: "redis_cache_error"
+  - id: "cache_operation_error"
     related_to: ["cache_configuration_error"]
   - id: "scheduler_execution_error"
     related_to: ["async_execution_error"]

@@ -16,19 +16,16 @@ patterns:
     name: "REST Client Connection Error"
     
     primary_pattern:
-      regex: "ConnectException|WebApplicationException|REST.*client.*failed|REST.*error|client.*connection.*failed"
-      confidence: 0.90
+      regex: "REST.*[Cc]lient.*error|rest.*client.*fail|WebApplicationException|RestClient.*Exception"
+      confidence: 0.85
     
     secondary_patterns:
-      - regex: "@RestClient"
+      - regex: "@RestClient|rest-client"
         weight: 0.5
         proximity_window: 30
-      - regex: "Connection refused"
-        weight: 0.6
-        proximity_window: 20
-      - regex: "quarkus\\.rest-client"
+      - regex: "Connection.*refused|connect.*fail"
         weight: 0.4
-        proximity_window: 35
+        proximity_window: 25
     
     severity: "MEDIUM"
     category: ["rest_client", "connectivity"]
@@ -272,29 +269,26 @@ patterns:
       lines_after: 10
       include_stack_trace: true
 
-  - id: "service_to_service_connection_failure"
-    name: "Service-to-Service Connection Failure"
+  - id: "service_communication_failure"
+    name: "Service Communication Failure"
     
     primary_pattern:
-      regex: "Connection refused.*[a-z-]+service|service\\..*\\.svc\\.cluster\\.local.*refused|Connection refused.*http://[a-z-]+-service"
-      confidence: 0.95
+      regex: "service.*communication.*fail|inter.*service.*error|service.*unreachable|service.*unavailable"
+      confidence: 0.85
     
     secondary_patterns:
-      - regex: "svc\\.cluster\\.local"
-        weight: 0.5
-        proximity_window: 30
-      - regex: "RestClientBuilder|RestClient"
+      - regex: "microservice|distributed.*system"
         weight: 0.4
+        proximity_window: 30
+      - regex: "service.*discovery|service.*mesh"
+        weight: 0.5
         proximity_window: 25
-      - regex: "[a-z-]+-service\\.[a-z-]+\\.(svc\\.)?cluster\\.local"
-        weight: 0.6
-        proximity_window: 20
     
-    severity: "CRITICAL"
-    category: ["services", "connectivity", "root_cause"]
+    severity: "HIGH"
+    category: ["services", "connectivity"]
     
     remediation:
-      description: "Service-to-service connection failed - likely root cause of cascade failure"
+      description: "Communication between services failed"
       common_causes:
         - "Target service is down or not responding"
         - "Network connectivity issues between services"
@@ -318,8 +312,8 @@ patterns:
 
 related_patterns:
   - id: "rest_client_connection_error"
-    related_to: ["rest_client_timeout_error", "json_serialization_error", "service_to_service_connection_failure"]
-  - id: "service_to_service_connection_failure"
+    related_to: ["rest_client_timeout_error", "json_serialization_error", "service_communication_failure"]
+  - id: "service_communication_failure"
     related_to: ["rest_client_connection_error", "rest_client_timeout_error"]
   - id: "grpc_service_error"
     related_to: ["rest_client_connection_error"]

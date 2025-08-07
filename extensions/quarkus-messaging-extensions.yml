@@ -12,67 +12,60 @@ categories:
   - async_processing
 
 patterns:
-  - id: "kafka_connection_failure"
-    name: "Kafka Connection Failure"
+  - id: "messaging_broker_connection_failure"
+    name: "Messaging Broker Connection Failure"
     
     primary_pattern:
-      regex: "KafkaException|Kafka.*connection.*failed|Unable to connect.*Kafka|Connection.*refused.*kafka|kafka.*error"
-      confidence: 0.94
+      regex: "broker.*connection.*fail|messaging.*connection.*error|unable.*connect.*broker|broker.*unavailable"
+      confidence: 0.85
     
     secondary_patterns:
-      - regex: "quarkus\\.kafka"
-        weight: 0.5
-        proximity_window: 30
-      - regex: "bootstrap\\.servers"
+      - regex: "kafka|rabbitmq|amqp|pulsar|mqtt"
         weight: 0.4
-        proximity_window: 25
-      - regex: "NetworkException"
-        weight: 0.6
-        proximity_window: 20
+        proximity_window: 35
+      - regex: "messaging|broker|producer|consumer"
+        weight: 0.3
+        proximity_window: 30
     
     severity: "HIGH"
-    category: ["messaging", "kafka"]
+    category: ["messaging", "broker", "connectivity"]
     
     remediation:
-      description: "Failed to connect to Kafka broker"
+      description: "Failed to connect to messaging broker"
       common_causes:
-        - "Kafka broker not running or unreachable"
-        - "Incorrect bootstrap.servers configuration"
+        - "Messaging broker not running or unreachable"
+        - "Incorrect broker connection configuration"
         - "Authentication/authorization issues"
         - "Network connectivity problems"
       
       suggested_commands:
-        - "Verify Kafka broker is running and accessible"
-        - "Check bootstrap.servers configuration"
-        - "Test network connectivity to Kafka broker"
-        - "Review SASL/SSL configuration if using security"
+        - "Verify messaging broker is running and accessible"
+        - "Check broker connection configuration"
+        - "Test network connectivity to broker"
+        - "Review authentication configuration if using security"
       
       documentation_links:
-        - "https://quarkus.io/guides/kafka"
-        - "https://quarkus.io/guides/kafka-reactive-getting-started"
+        - "https://quarkus.io/guides/messaging"
     
     context_extraction:
       lines_before: 15
       lines_after: 10
       include_stack_trace: true
 
-  - id: "reactive_messaging_channel_error"
-    name: "Reactive Messaging Channel Error"
+  - id: "messaging_channel_error"
+    name: "Messaging Channel Error"
     
     primary_pattern:
-      regex: "@Channel.*failed|ReactiveMessaging.*error|Emitter.*failed|channel.*error|messaging.*failed"
-      confidence: 0.88
+      regex: "channel.*error|channel.*fail|messaging.*channel.*problem|channel.*configuration.*error"
+      confidence: 0.80
     
     secondary_patterns:
       - regex: "@Channel|@Incoming|@Outgoing"
-        weight: 0.5
-        proximity_window: 25
-      - regex: "Emitter|Channel"
         weight: 0.4
-        proximity_window: 20
-      - regex: "quarkus\\..*messaging"
-        weight: 0.3
         proximity_window: 30
+      - regex: "emitter|publisher|subscriber"
+        weight: 0.3
+        proximity_window: 25
     
     severity: "MEDIUM"
     category: ["reactive_messaging", "channels"]
@@ -230,9 +223,9 @@ patterns:
       lines_after: 10
 
 related_patterns:
-  - id: "kafka_connection_failure"
-    related_to: ["reactive_messaging_channel_error", "message_acknowledgment_error"]
+  - id: "messaging_broker_connection_failure"
+    related_to: ["messaging_channel_error", "message_acknowledgment_error"]
   - id: "reactive_streams_error"
-    related_to: ["reactive_messaging_channel_error"]
+    related_to: ["messaging_channel_error"]
   - id: "message_serialization_error"
-    related_to: ["kafka_connection_failure"] 
+    related_to: ["messaging_broker_connection_failure"] 
