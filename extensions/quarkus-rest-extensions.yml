@@ -16,7 +16,7 @@ patterns:
     name: "REST Client Connection Error"
     
     primary_pattern:
-      regex: "REST.*[Cc]lient.*error|rest.*client.*fail|WebApplicationException|RestClient.*Exception"
+      regex: "WebApplicationException|RestClientException|ConnectException.*RestClient|ERROR.*rest.*client|rest.*client.*failed"
       confidence: 0.85
     
     secondary_patterns:
@@ -56,7 +56,7 @@ patterns:
     name: "REST Client Timeout Error"
     
     primary_pattern:
-      regex: "SocketTimeoutException|ReadTimeoutException|TimeoutException|REST.*timeout|client.*timeout|timeout.*error"
+      regex: "SocketTimeoutException|ReadTimeoutException|TimeoutException.*REST|ERROR.*timeout|WebClientRequestException.*timeout"
       confidence: 0.89
     
     secondary_patterns:
@@ -273,7 +273,7 @@ patterns:
     name: "Service Communication Failure"
     
     primary_pattern:
-      regex: "service.*communication.*fail|inter.*service.*error|service.*unreachable|service.*unavailable"
+      regex: "ERROR.*service.*communication.*fail|ERROR.*service.*unavailable|WebApplicationException.*service|Service.*unavailable.*exception"
       confidence: 0.85
     
     secondary_patterns:

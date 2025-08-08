@@ -18,7 +18,7 @@ patterns:
     name: "Health Check Failure"
     
     primary_pattern:
-      regex: "Health check.*failed|Readiness.*failed|Liveness.*failed|health.*error|check.*DOWN"
+      regex: "Health check.*failed|Readiness.*failed|Liveness.*failed|ERROR.*health|health.*status.*DOWN|HealthCheckException"
       confidence: 0.91
     
     secondary_patterns:

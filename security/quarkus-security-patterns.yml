@@ -147,7 +147,7 @@ patterns:
     name: "RBAC Permission Denied"
     
     primary_pattern:
-      regex: "ForbiddenException|Access.*denied|Permission.*denied|Forbidden|403|unauthorized"
+      regex: "ForbiddenException|Access.*denied|Permission.*denied|Forbidden|\\b403\\b|unauthorized"
       confidence: 0.85
     
     secondary_patterns:
